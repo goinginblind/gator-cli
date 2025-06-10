@@ -51,6 +51,15 @@ func handlerRegister(s *state, cmd Command) error {
 	}
 	// set new current user
 	s.cfg.SetUser(cmd.Args[0])
-	fmt.Printf("user '%v' has been created\n", cmd.Args[0])
+	fmt.Printf("user '%v' has been created and set as current\n", cmd.Args[0])
+	return nil
+}
+
+func handlerReset(s *state, cmd Command) error {
+	ctx := context.Background()
+	if err := s.db.ResetRows(ctx); err != nil {
+		return fmt.Errorf("failt to reset rows: %w", err)
+	}
+	fmt.Printf("table rows have been reset\n")
 	return nil
 }
