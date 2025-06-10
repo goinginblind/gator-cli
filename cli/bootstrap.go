@@ -6,6 +6,7 @@ var commandsMap = map[string]func(*state, Command) error{
 	"login":    handlerLogin,
 	"register": handlerRegister,
 	"reset":    handlerReset,
+	"users":    handlerGetUsers,
 }
 
 func NewCommands() *commands {
