@@ -20,7 +20,3 @@ func (c *commands) Run(s *state, cmd Command) error {
 	}
 	return f(s, cmd)
 }
-
-func (c *commands) register(name string, f func(*state, Command) error) {
-	c.handlers[name] = f
-}

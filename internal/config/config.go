@@ -37,20 +37,20 @@ func write(cfg Config) error {
 	return nil
 }
 
-func Read() (Config, error) {
+func Read() (*Config, error) {
 	path, err := getConfigFilePath()
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
-		return Config{}, fmt.Errorf("fail to read config file: %w", err)
+		return nil, fmt.Errorf("fail to read config file: %w", err)
 	}
 	var cfg Config
 	if err = json.Unmarshal(raw, &cfg); err != nil {
-		return Config{}, fmt.Errorf("fail to unmarshal config file: %w", err)
+		return nil, fmt.Errorf("fail to unmarshal config file: %w", err)
 	}
-	return cfg, nil
+	return &cfg, nil
 }
 
 func (cfg *Config) SetUser(name string) error {
