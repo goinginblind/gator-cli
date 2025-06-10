@@ -4,24 +4,26 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goinginblind/gator-cli/cli"
 	"github.com/goinginblind/gator-cli/internal/config"
 )
 
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	if err = cfg.SetUser("Sam"); err != nil {
-		fmt.Print(err)
+	state := cli.NewState(&cfg)
+	commands := cli.NewCommands()
+	args := os.Args
+	if len(args) < 2 {
+		fmt.Println("no command given")
 		os.Exit(1)
 	}
-	cfg, err = config.Read()
-	if err != nil {
-		fmt.Print(err)
+	command := &cli.Command{Name: args[1], Args: args[2:]}
+	if err = commands.Run(state, *command); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(cfg.CurrentUserName)
-	fmt.Println(cfg.DbURL)
 }
