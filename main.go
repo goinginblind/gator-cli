@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/goinginblind/gator-cli/cli"
+	"github.com/goinginblind/gator-cli/internal/cli"
 	"github.com/goinginblind/gator-cli/internal/config"
 	"github.com/goinginblind/gator-cli/internal/database"
 

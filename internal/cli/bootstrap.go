@@ -7,6 +7,8 @@ var commandsMap = map[string]func(*state, Command) error{
 	"register": handlerRegister,
 	"reset":    handlerReset,
 	"users":    handlerGetUsers,
+	"agg":      handlerAggregator,
+	"addfeed":  handlerCreateFeed,
 }
 
 func NewCommands() *commands {

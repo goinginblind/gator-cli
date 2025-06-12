@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/goinginblind/gator-cli/internal/database"
-	"github.com/google/uuid"
+	"github.com/goinginblind/gator-cli/internal/rss"
 )
 
 func handlerLogin(s *state, cmd Command) error {
@@ -36,22 +36,21 @@ func handlerRegister(s *state, cmd Command) error {
 		return fmt.Errorf("'register' expects a single argument")
 	}
 	ctx := context.Background()
+	username := strings.TrimSpace(cmd.Args[0])
 
 	// check if the name is already taken
-	if _, err := s.db.GetUserByName(ctx, cmd.Args[0]); err == nil {
-		return fmt.Errorf("username '%v' already taken", cmd.Args[0])
+	if _, err := s.db.GetUserByName(ctx, username); err == nil {
+		return fmt.Errorf("username '%v' already taken", username)
 	}
 
-	// create a new user struct for db
-	newUser := database.CreateUserParams{ID: uuid.New(), CreatedAt: time.Now(), UpdatedAt: time.Now(), Name: cmd.Args[0]}
 	// create new user in the db
-	_, err := s.db.CreateUser(ctx, newUser)
+	_, err := s.db.CreateUser(ctx, username)
 	if err != nil {
 		return fmt.Errorf("fail to create a user in database: %w", err)
 	}
 	// set new current user
-	s.cfg.SetUser(cmd.Args[0])
-	fmt.Printf("user '%v' has been created and set as current\n", cmd.Args[0])
+	s.cfg.SetUser(username)
+	fmt.Printf("user '%v' has been created and set as current\n", username)
 	return nil
 }
 
@@ -77,5 +76,47 @@ func handlerGetUsers(s *state, cmd Command) error {
 			fmt.Printf("* %s\n", user.Name)
 		}
 	}
+	return nil
+}
+
+func handlerAggregator(s *state, cmd Command) error {
+	ctx := context.Background()
+	res, err := rss.FetchFeed(ctx, "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	for i := range res.Channel.Item {
+		fmt.Print(res.Channel.Item[i].Title)
+		fmt.Println()
+	}
+	return nil
+}
+
+func handlerCreateFeed(s *state, cmd Command) error {
+	if len(cmd.Args) < 2 {
+		return fmt.Errorf("'addfeed' expects two arguments")
+	}
+	ctx := context.Background()
+	u, err := s.db.GetUserByName(ctx, s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("fail to get users id: %w", err)
+	}
+	feedParams := database.CreateFeedParams{
+		Name:   strings.TrimSpace(cmd.Args[0]),
+		Url:    strings.TrimSpace(cmd.Args[1]),
+		UserID: u.ID,
+	}
+
+	feed, err := s.db.CreateFeed(ctx, feedParams)
+	if err != nil {
+		return fmt.Errorf("fail to create feed: %w", err)
+	}
+
+	fmt.Printf("ID:		%s \n", feed.ID)
+	fmt.Printf("Name:		%s \n", feed.Name)
+	fmt.Printf("UserID:		%s \n", feed.UserID)
+	fmt.Printf("URL:		%s \n", feed.Url)
+	fmt.Printf("Created at: 	%s \n", feed.CreatedAt)
+
 	return nil
 }
