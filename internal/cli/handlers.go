@@ -120,3 +120,15 @@ func handlerCreateFeed(s *state, cmd Command) error {
 
 	return nil
 }
+
+func handlerGetFeedsWithUNames(s *state, cmd Command) error {
+	ctx := context.Background()
+	feeds, err := s.db.GetFeedsWithUNames(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get feeds: %w", err)
+	}
+	for _, feed := range feeds {
+		fmt.Printf("feed name: %v\nurl: %v\nadded by: %v\n\n", feed.Name, feed.Url, feed.Name_2)
+	}
+	return nil
+}

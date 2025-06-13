@@ -9,6 +9,7 @@ var commandsMap = map[string]func(*state, Command) error{
 	"users":    handlerGetUsers,
 	"agg":      handlerAggregator,
 	"addfeed":  handlerCreateFeed,
+	"feeds":    handlerGetFeedsWithUNames,
 }
 
 func NewCommands() *commands {

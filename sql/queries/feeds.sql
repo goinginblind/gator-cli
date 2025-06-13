@@ -12,3 +12,7 @@ SELECT * FROM feeds
 WHERE user_id = $1
 ORDER BY created_at DESC 
 LIMIT 1;
+
+-- name: GetFeedsWithUNames :many
+SELECT feeds.name, feeds.url, users.name FROM feeds
+JOIN users ON user_id = users.id;
