@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/goinginblind/gator-cli/internal/app/common"
 	"github.com/goinginblind/gator-cli/internal/database"
@@ -44,12 +45,43 @@ func scrapeFeeds(s *common.State) error {
 	if err = s.DB.MarkFeedFetched(ctx, feed.ID); err != nil {
 		return fmt.Errorf("fail to mark feed as fetched: %w", err)
 	}
-	rssFedd, err := rss.FetchFeed(ctx, feed.Url)
+	rssFeed, err := rss.FetchFeed(ctx, feed.Url)
 	if err != nil {
 		return err
 	}
-	for _, item := range rssFedd.Channel.Item {
-		fmt.Println(item.Title)
+
+	for _, item := range rssFeed.Channel.Item {
+		nullTime := toNullTime(item.PubDate)
+		_, err = s.DB.CreatePost(ctx, database.CreatePostParams{
+			Title: item.Title,
+			Url:   item.Link,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  item.Description != "",
+			},
+			PublishedAt: nullTime,
+			FeedID:      feed.ID,
+		})
+		if err == nil {
+			fmt.Printf("post '%v' saved\n", item.Title)
+		} else if err != sql.ErrNoRows {
+			fmt.Printf("fail to create post: %v\n", err)
+		}
 	}
 	return nil
+}
+
+func toNullTime(s string) sql.NullTime {
+	formats := []string{
+		time.RFC1123Z,
+		time.RFC1123,
+		time.RFC822,
+		time.RFC3339,
+	}
+	for _, f := range formats {
+		if parsed, err := time.Parse(f, s); err == nil {
+			return sql.NullTime{Time: parsed, Valid: true}
+		}
+	}
+	return sql.NullTime{}
 }
