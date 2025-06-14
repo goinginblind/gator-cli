@@ -7,6 +7,7 @@ import (
 
 	"github.com/goinginblind/gator-cli/internal/app/common"
 	"github.com/goinginblind/gator-cli/internal/database"
+	"github.com/goinginblind/gator-cli/internal/rss"
 )
 
 func requireArgs(cmd common.Command, n int, usage string) error {
@@ -31,5 +32,24 @@ func followFeed(s *common.State, user database.User, ctx context.Context, feedUr
 	}
 
 	fmt.Printf("user '%v' is now following '%v'\n", user.Name, feed.Name)
+	return nil
+}
+
+func scrapeFeeds(s *common.State) error {
+	ctx := context.Background()
+	feed, err := s.DB.GetNextFeedToFetch(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get next feed to fetch: %w", err)
+	}
+	if err = s.DB.MarkFeedFetched(ctx, feed.ID); err != nil {
+		return fmt.Errorf("fail to mark feed as fetched: %w", err)
+	}
+	rssFedd, err := rss.FetchFeed(ctx, feed.Url)
+	if err != nil {
+		return err
+	}
+	for _, item := range rssFedd.Channel.Item {
+		fmt.Println(item.Title)
+	}
 	return nil
 }

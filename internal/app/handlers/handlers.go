@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/goinginblind/gator-cli/internal/app/common"
 	"github.com/goinginblind/gator-cli/internal/database"
-	"github.com/goinginblind/gator-cli/internal/rss"
 )
 
 func Login(s *common.State, cmd common.Command) error {
@@ -81,16 +81,18 @@ func GetUsers(s *common.State, cmd common.Command) error {
 }
 
 func Aggregator(s *common.State, cmd common.Command) error {
-	ctx := context.Background()
-	res, err := rss.FetchFeed(ctx, "https://www.wagslane.dev/index.xml")
-	if err != nil {
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
 		return err
 	}
-	for i := range res.Channel.Item {
-		fmt.Print(res.Channel.Item[i].Title)
-		fmt.Println()
+	time_between_reqs, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("fail to parse time between reqs: %w", err)
 	}
-	return nil
+	fmt.Printf("collecting feeds every %v\n", time_between_reqs)
+	ticker := time.NewTicker(time_between_reqs)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 func AddFeed(s *common.State, cmd common.Command, user database.User) error {
