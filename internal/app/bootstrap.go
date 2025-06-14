@@ -16,4 +16,5 @@ func RegisterCommands(r *common.Routes) {
 	r.Register("feeds", handlers.GetFeedsWithUNames)
 	r.Register("follow", middleware.LoggedIn(handlers.CreateFollow))
 	r.Register("following", middleware.LoggedIn(handlers.UsersFollows))
+	r.Register("unfollow", middleware.LoggedIn(handlers.DeleteFollow))
 }

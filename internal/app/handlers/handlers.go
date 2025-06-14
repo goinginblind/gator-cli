@@ -149,8 +149,29 @@ func UsersFollows(s *common.State, cmd common.Command, user database.User) error
 	if err != nil {
 		return fmt.Errorf("fail to get feed follows: %w", err)
 	}
+	if len(feeds) == 0 {
+		fmt.Printf("no feeds followed")
+		return nil
+	}
 	for i, feed := range feeds {
 		fmt.Printf("%v. %v\n", i+1, feed)
 	}
+	return nil
+}
+
+func DeleteFollow(s *common.State, cmd common.Command, user database.User) error {
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	feed, err := s.DB.GetFeedByUrl(ctx, cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("fail to get feed by url: %w", err)
+	}
+	err = s.DB.DeleteFollow(ctx, database.DeleteFollowParams{UserID: user.ID, FeedID: feed.ID})
+	if err != nil {
+		return fmt.Errorf("fail to delete to unfollow: %w", err)
+	}
+	fmt.Printf("unfollowed feed %s\n", feed.Name)
 	return nil
 }
