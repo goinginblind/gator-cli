@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/goinginblind/gator-cli/internal/cli"
+	"github.com/goinginblind/gator-cli/internal/app"
+	"github.com/goinginblind/gator-cli/internal/app/common"
 	"github.com/goinginblind/gator-cli/internal/config"
 	"github.com/goinginblind/gator-cli/internal/database"
 
@@ -27,14 +28,15 @@ func main() {
 	defer db.Close()
 
 	dbQueries := database.New(db)
-	state := cli.NewState(dbQueries, cfg)
-	cmds := cli.NewCommands()
+	state := common.NewState(dbQueries, cfg)
+	cmds := common.NewRoutes()
+	app.RegisterCommands(cmds)
 	args := os.Args
 	if len(args) < 2 {
 		fmt.Println("no command provided")
 		os.Exit(1)
 	}
-	cmd := cli.Command{Name: args[1], Args: args[2:]}
+	cmd := common.Command{Name: args[1], Args: args[2:]}
 	if err := cmds.Run(state, cmd); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

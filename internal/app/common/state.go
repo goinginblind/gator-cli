@@ -1,4 +1,4 @@
-package cli
+package common
 
 import (
 	"github.com/goinginblind/gator-cli/internal/config"
@@ -6,10 +6,10 @@ import (
 )
 
 type State struct {
-	db  *database.Queries
-	cfg *config.Config
+	DB     *database.Queries
+	Config *config.Config
 }
 
 func NewState(db *database.Queries, cfg *config.Config) *State {
-	return &State{db: db, cfg: cfg}
+	return &State{DB: db, Config: cfg}
 }
