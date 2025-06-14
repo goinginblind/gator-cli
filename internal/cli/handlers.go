@@ -10,7 +10,7 @@ import (
 	"github.com/goinginblind/gator-cli/internal/rss"
 )
 
-func handlerLogin(s *state, cmd Command) error {
+func handlerLogin(s *State, cmd Command) error {
 	if len(cmd.Args) == 0 {
 		return fmt.Errorf("'login' expects a single argument")
 	}
@@ -30,7 +30,7 @@ func handlerLogin(s *state, cmd Command) error {
 	return nil
 }
 
-func handlerRegister(s *state, cmd Command) error {
+func handlerRegister(s *State, cmd Command) error {
 	// check if there are arguments at all
 	if len(cmd.Args) == 0 {
 		return fmt.Errorf("'register' expects a single argument")
@@ -54,7 +54,7 @@ func handlerRegister(s *state, cmd Command) error {
 	return nil
 }
 
-func handlerReset(s *state, cmd Command) error {
+func handlerReset(s *State, cmd Command) error {
 	ctx := context.Background()
 	if err := s.db.ResetRows(ctx); err != nil {
 		return fmt.Errorf("failt to reset rows: %w", err)
@@ -63,7 +63,7 @@ func handlerReset(s *state, cmd Command) error {
 	return nil
 }
 
-func handlerGetUsers(s *state, cmd Command) error {
+func handlerGetUsers(s *State, cmd Command) error {
 	ctx := context.Background()
 	users, err := s.db.GetUsers(ctx)
 	if err != nil {
@@ -79,7 +79,7 @@ func handlerGetUsers(s *state, cmd Command) error {
 	return nil
 }
 
-func handlerAggregator(s *state, cmd Command) error {
+func handlerAggregator(s *State, cmd Command) error {
 	ctx := context.Background()
 	res, err := rss.FetchFeed(ctx, "https://www.wagslane.dev/index.xml")
 	if err != nil {
@@ -92,19 +92,19 @@ func handlerAggregator(s *state, cmd Command) error {
 	return nil
 }
 
-func handlerCreateFeed(s *state, cmd Command) error {
+func handlerCreateFeed(s *State, cmd Command) error {
 	if len(cmd.Args) < 2 {
 		return fmt.Errorf("'addfeed' expects two arguments")
 	}
 	ctx := context.Background()
-	u, err := s.db.GetUserByName(ctx, s.cfg.CurrentUserName)
+	user, err := s.db.GetUserByName(ctx, s.cfg.CurrentUserName)
 	if err != nil {
 		return fmt.Errorf("fail to get users id: %w", err)
 	}
 	feedParams := database.CreateFeedParams{
 		Name:   strings.TrimSpace(cmd.Args[0]),
 		Url:    strings.TrimSpace(cmd.Args[1]),
-		UserID: u.ID,
+		UserID: user.ID,
 	}
 
 	feed, err := s.db.CreateFeed(ctx, feedParams)
@@ -118,10 +118,14 @@ func handlerCreateFeed(s *state, cmd Command) error {
 	fmt.Printf("URL:		%s \n", feed.Url)
 	fmt.Printf("Created at: 	%s \n", feed.CreatedAt)
 
+	if err = followFeed(s, ctx, feed.Url); err != nil {
+		return fmt.Errorf("feed created, but fail to follow it: %w", err)
+	}
+
 	return nil
 }
 
-func handlerGetFeedsWithUNames(s *state, cmd Command) error {
+func handlerGetFeedsWithUNames(s *State, cmd Command) error {
 	ctx := context.Background()
 	feeds, err := s.db.GetFeedsWithUNames(ctx)
 	if err != nil {
@@ -129,6 +133,31 @@ func handlerGetFeedsWithUNames(s *state, cmd Command) error {
 	}
 	for _, feed := range feeds {
 		fmt.Printf("feed name: %v\nurl: %v\nadded by: %v\n\n", feed.Name, feed.Url, feed.Name_2)
+	}
+	return nil
+}
+
+func handlerCreateFollow(s *State, cmd Command) error {
+	if len(cmd.Args) == 0 {
+		return fmt.Errorf("'follow' expects one argument")
+	}
+	feedUrl := strings.TrimSpace(cmd.Args[0])
+	ctx := context.Background()
+	return followFeed(s, ctx, feedUrl)
+}
+
+func handlerGetFeedFollowsForUser(s *State, cmd Command) error {
+	ctx := context.Background()
+	user, err := s.db.GetUserByName(ctx, s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("fail to get user: %w", err)
+	}
+	feeds, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
+	if err != nil {
+		return fmt.Errorf("fail to get feed follows: %w", err)
+	}
+	for i, feed := range feeds {
+		fmt.Printf("%v. %v\n", i+1, feed)
 	}
 	return nil
 }

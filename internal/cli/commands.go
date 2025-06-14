@@ -10,10 +10,10 @@ type Command struct {
 }
 
 type commands struct {
-	handlers map[string]func(*state, Command) error
+	handlers map[string]func(*State, Command) error
 }
 
-func (c *commands) Run(s *state, cmd Command) error {
+func (c *commands) Run(s *State, cmd Command) error {
 	f, ok := c.handlers[cmd.Name]
 	if !ok {
 		return fmt.Errorf("unknown command: %s", cmd.Name)
