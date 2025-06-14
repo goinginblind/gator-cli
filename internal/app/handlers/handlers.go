@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -175,5 +176,33 @@ func DeleteFollow(s *common.State, cmd common.Command, user database.User) error
 		return fmt.Errorf("fail to delete to unfollow: %w", err)
 	}
 	fmt.Printf("unfollowed feed %s\n", feed.Name)
+	return nil
+}
+
+func Browse(s *common.State, cmd common.Command, user database.User) error {
+	var lim int
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		lim = 2
+	} else {
+		lim, err = strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return fmt.Errorf("%v is not a valid limit value", cmd.Args[0])
+		}
+	}
+
+	ctx := context.Background()
+	posts, err := s.DB.GetPostsUser(ctx, database.GetPostsUserParams{ID: user.ID, Limit: int32(lim)})
+	if err != nil {
+		return fmt.Errorf("fail to fetch posts for user: %w", err)
+	}
+	for _, post := range posts {
+		fmt.Printf("\033[31m------- %v ------\033[0m\n", post.Title)
+		fmt.Printf("\033[33m* URL: %v\033[0m\n", post.Url)
+		fmt.Printf("* Description: %v\n", post.Description.String)
+		fmt.Printf("* Published on: %v\n", post.PublishedAt.Time)
+		fmt.Println("\033[31m------------------------------------------\033[0m")
+		fmt.Println()
+		fmt.Println()
+	}
 	return nil
 }

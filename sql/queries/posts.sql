@@ -9,5 +9,5 @@ SELECT posts.* FROM posts
 INNER JOIN feeds ON posts.feed_id = feeds.id
 INNER JOIN users ON users.id = feeds.user_id
 WHERE users.id = $1
-ORDER BY posts.published_at ASC 
+ORDER BY posts.published_at DESC 
 LIMIT $2;
