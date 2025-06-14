@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/goinginblind/gator-cli/internal/app/common"
 	"github.com/goinginblind/gator-cli/internal/app/handlers"
+	"github.com/goinginblind/gator-cli/internal/app/middleware"
 )
 
 func RegisterCommands(r *common.Routes) {
@@ -11,8 +12,8 @@ func RegisterCommands(r *common.Routes) {
 	r.Register("reset", handlers.Reset)
 	r.Register("users", handlers.GetUsers)
 	r.Register("agg", handlers.Aggregator)
-	r.Register("addfeed", handlers.CreateFeed)
+	r.Register("addfeed", middleware.LoggedIn(handlers.AddFeed))
 	r.Register("feeds", handlers.GetFeedsWithUNames)
-	r.Register("follow", handlers.CreateFollow)
-	r.Register("following", handlers.GetFeedFollowsForUser)
+	r.Register("follow", middleware.LoggedIn(handlers.CreateFollow))
+	r.Register("following", middleware.LoggedIn(handlers.UsersFollows))
 }

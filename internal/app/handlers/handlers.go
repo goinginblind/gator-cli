@@ -12,8 +12,8 @@ import (
 )
 
 func Login(s *common.State, cmd common.Command) error {
-	if len(cmd.Args) == 0 {
-		return fmt.Errorf("'login' expects a single argument")
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		return err
 	}
 
 	ctx := context.Background()
@@ -32,10 +32,10 @@ func Login(s *common.State, cmd common.Command) error {
 }
 
 func Register(s *common.State, cmd common.Command) error {
-	// check if there are arguments at all
-	if len(cmd.Args) == 0 {
-		return fmt.Errorf("'register' expects a single argument")
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		return err
 	}
+
 	ctx := context.Background()
 	username := strings.TrimSpace(cmd.Args[0])
 
@@ -58,7 +58,7 @@ func Register(s *common.State, cmd common.Command) error {
 func Reset(s *common.State, cmd common.Command) error {
 	ctx := context.Background()
 	if err := s.DB.ResetRows(ctx); err != nil {
-		return fmt.Errorf("failt to reset rows: %w", err)
+		return fmt.Errorf("fail to reset rows: %w", err)
 	}
 	fmt.Printf("table rows have been reset\n")
 	return nil
@@ -93,15 +93,11 @@ func Aggregator(s *common.State, cmd common.Command) error {
 	return nil
 }
 
-func CreateFeed(s *common.State, cmd common.Command) error {
-	if len(cmd.Args) < 2 {
-		return fmt.Errorf("'addfeed' expects two arguments")
+func AddFeed(s *common.State, cmd common.Command, user database.User) error {
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		return err
 	}
 	ctx := context.Background()
-	user, err := s.DB.GetUserByName(ctx, s.Config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("fail to get users id: %w", err)
-	}
 	feedParams := database.CreateFeedParams{
 		Name:   strings.TrimSpace(cmd.Args[0]),
 		Url:    strings.TrimSpace(cmd.Args[1]),
@@ -119,7 +115,7 @@ func CreateFeed(s *common.State, cmd common.Command) error {
 	fmt.Printf("URL:		%s \n", feed.Url)
 	fmt.Printf("Created at: 	%s \n", feed.CreatedAt)
 
-	if err = followFeed(s, ctx, feed.Url); err != nil {
+	if err = followFeed(s, user, ctx, feed.Url); err != nil {
 		return fmt.Errorf("feed created, but fail to follow it: %w", err)
 	}
 
@@ -138,21 +134,17 @@ func GetFeedsWithUNames(s *common.State, cmd common.Command) error {
 	return nil
 }
 
-func CreateFollow(s *common.State, cmd common.Command) error {
-	if len(cmd.Args) == 0 {
-		return fmt.Errorf("'follow' expects one argument")
+func CreateFollow(s *common.State, cmd common.Command, user database.User) error {
+	if err := requireArgs(cmd, 1, cmd.Name); err != nil {
+		return err
 	}
 	feedUrl := strings.TrimSpace(cmd.Args[0])
 	ctx := context.Background()
-	return followFeed(s, ctx, feedUrl)
+	return followFeed(s, user, ctx, feedUrl)
 }
 
-func GetFeedFollowsForUser(s *common.State, cmd common.Command) error {
+func UsersFollows(s *common.State, cmd common.Command, user database.User) error {
 	ctx := context.Background()
-	user, err := s.DB.GetUserByName(ctx, s.Config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("fail to get user: %w", err)
-	}
 	feeds, err := s.DB.GetFeedFollowsForUser(ctx, user.ID)
 	if err != nil {
 		return fmt.Errorf("fail to get feed follows: %w", err)

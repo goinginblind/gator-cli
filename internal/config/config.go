@@ -27,7 +27,7 @@ func write(cfg Config) error {
 	if err != nil {
 		return err
 	}
-	raw, err := json.Marshal(cfg)
+	raw, err := json.MarshalIndent(cfg, "", " ")
 	if err != nil {
 		return fmt.Errorf("fail to marshal json: %w", err)
 	}

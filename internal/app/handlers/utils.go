@@ -9,14 +9,17 @@ import (
 	"github.com/goinginblind/gator-cli/internal/database"
 )
 
-func followFeed(s *common.State, ctx context.Context, feedUrl string) error {
+func requireArgs(cmd common.Command, n int, usage string) error {
+	if len(cmd.Args) < n {
+		return fmt.Errorf("'%s' expects %d arguments", usage, n)
+	}
+	return nil
+}
+
+func followFeed(s *common.State, user database.User, ctx context.Context, feedUrl string) error {
 	feed, err := s.DB.GetFeedByUrl(ctx, feedUrl)
 	if err != nil {
 		return fmt.Errorf("fail to get feed with url: '%v'; error: %w", feedUrl, err)
-	}
-	user, err := s.DB.GetUserByName(ctx, s.Config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("fail to get user: %w", err)
 	}
 
 	_, err = s.DB.CreateFeedFollow(ctx, database.CreateFeedFollowParams{UserID: user.ID, FeedID: feed.ID})
