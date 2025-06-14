@@ -23,7 +23,7 @@ A command-line RSS aggregator and user management tool written in Go. It uses Po
 
 ### 1. Clone the repository
 ```bash
-git clone <your-repo-url>
+git clone github.com/goinginblind/gator-cli
 cd gator-cli
 ```
 
